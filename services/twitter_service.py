@@ -155,29 +155,9 @@ class TwitterService:
         return self.get_tweet(tweet_id)
     
     def get_thread(self, tweet_id: str) -> List[Tweet]:
-        """
-        Get all tweets in a thread using web scraping
-        
-        Args:
-            tweet_id: Tweet ID (can be any tweet ID in the thread)
-            
-        Returns:
-            List of tweets sorted by time
-            
-        Raises:
-            TwitterScrapingError: Failed to get thread
-            ValueError: Invalid tweet ID
-        """
         if not tweet_id or not tweet_id.isdigit():
             raise ValueError(f"Invalid tweet ID: {tweet_id}")
-        
-        # Get the specified tweet
-        main_tweet = self.get_tweet(tweet_id)
-        
-        # Web scraping mode: currently simplified to return single tweet
-        # TODO: Future enhancement for web scraping to support thread parsing
-        info(f"[TwitterService] Web scraping mode: returning single tweet (thread parsing not yet supported)")
-        return [main_tweet]
+        return [self.get_tweet(tweet_id)]
     
     def get_thread_by_url(self, url: str) -> List[Tweet]:
         """

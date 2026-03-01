@@ -559,20 +559,8 @@ def process_tweet_task(task_id, url):
                 info(f"[Task {task_id}] Detected article URL, will scrape full article content")
                 update_task_progress(task_id, 'article_detected', '检测到长文链接，将抓取长文内容')
 
-            # 检查是否是推文串的一部分
-            if single_tweet.conversation_id != single_tweet.id:
-                info(f"[Task {task_id}] Detected thread, getting full conversation...")
-                update_task_progress(task_id, 'thread_detected', '检测到推文串，正在获取完整对话...')
-                # 这是推文串的一部分，获取完整串
-                tweets = twitter_service.get_thread(tweet_id)
-                is_thread = True
-                success(f"[Task {task_id}] Got {len(tweets)} tweets in thread")
-                update_task_progress(task_id, 'thread_complete', f'获取到推文串，共 {len(tweets)} 条推文')
-            else:
-                tweets = [single_tweet]
-                is_thread = False
-                info(f"[Task {task_id}] Single tweet, not a thread")
-                update_task_progress(task_id, 'single_tweet', '单条推文，非推文串')
+            tweets = [single_tweet]
+            is_thread = False
                 
         except TwitterScrapingError as e:
             error(f"[Task {task_id}] Twitter API Error: {str(e)}")
