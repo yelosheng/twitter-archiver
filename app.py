@@ -506,41 +506,6 @@ def init_services():
         traceback.print_exc()
         return False
 
-def auto_generate_tags_for_tweet(task_id: int, tweet_text: str, author_username: str = None):
-    """
-    自动为新保存的推文生成标签
-
-    Args:
-        task_id: 任务ID
-        tweet_text: 推文文本
-        author_username: 作者用户名
-    """
-    from services.config_manager import ConfigManager
-
-    # 获取Gemini API密钥（从config.ini）
-    config = ConfigManager()
-    gemini_api_key = config.get_gemini_api_key()
-
-    # 生成标签
-    if gemini_api_key:
-        # 优先使用Gemini API
-        info(f"[Tag Generator] Using Gemini API for task {task_id}")
-        tags = tag_generator.generate_tags_gemini_api(tweet_text, gemini_api_key)
-        method = 'gemini_api'
-    else:
-        # 降级到规则引擎
-        info(f"[Tag Generator] Using rule-based engine for task {task_id}")
-        tags = tag_generator.generate_tags_rule_based(tweet_text, author_username)
-        method = 'rule_based'
-
-    if tags:
-        # 应用标签
-        tag_generator.apply_tags_to_tweet(task_id, tags, method)
-        tag_names = [f"{name}({conf:.2f})" for name, conf in tags]
-        success(f"[Tag Generator] Generated {len(tags)} tags for task {task_id}: {', '.join(tag_names)}")
-    else:
-        info(f"[Tag Generator] No tags matched for task {task_id}")
-
 def process_tweet_task(task_id, url):
     """处理单个推文任务"""
     conn = get_db_connection()
@@ -1047,12 +1012,6 @@ def saved():
     return render_template('saved.html')
 
 
-@app.route('/tags')
-@login_required
-def tags_page():
-    """标签管理页面"""
-    return render_template('tags.html')
-
 @app.route('/retries')
 @login_required
 def retries():
@@ -1186,9 +1145,6 @@ def api_saved():
             task_dict['has_media_preview'] = False
             task_dict['preview_text'] = '保存路径不存在'
 
-        # 获取标签信息
-        task_dict['tags'] = tag_generator.get_tags_for_tweet(task_dict['id'])
-
         saved_list.append(task_dict)
 
     return jsonify({
@@ -1302,9 +1258,6 @@ def show_tweet(slug):
             print(f"[DEBUG] Failed to read HTML file: {e}")
             tweet_html = ""
 
-    # 获取标签
-    tags = tag_generator.get_tags_for_tweet(task_id)
-
     # 构造推文数据
     content_type = 'tweet'
     try:
@@ -1325,7 +1278,6 @@ def show_tweet(slug):
         'avatar_file': avatar_file,
         'text': tweet_text,
         'html_content': tweet_html,
-        'tags': tags,
         'content_type': content_type,
         'is_article': content_type == 'article'
     }
@@ -2189,327 +2141,6 @@ def test_logs():
         'message': 'Test logs generated',
         'buffer_size': buffer_size,
         'latest_logs': latest_logs
-    })
-
-
-# ==================== 标签系统 API ====================
-
-from services.tag_generator import TagGenerator
-
-tag_generator = TagGenerator()
-
-@app.route('/api/tags/all')
-def api_get_all_tags():
-    """获取所有标签及使用统计"""
-    try:
-        conn = get_db_connection()
-
-        # 查询所有标签及其使用次数
-        query = '''
-            SELECT
-                t.id,
-                t.name,
-                t.emoji,
-                t.color,
-                t.usage_count,
-                t.is_auto_generated,
-                COUNT(DISTINCT tt.task_id) as tweet_count
-            FROM tags t
-            LEFT JOIN tweet_tags tt ON t.id = tt.tag_id
-            LEFT JOIN tasks tk ON tt.task_id = tk.id AND tk.status = 'completed'
-            GROUP BY t.id
-            ORDER BY tweet_count DESC, t.name ASC
-        '''
-
-        tags = conn.execute(query).fetchall()
-        conn.close()
-
-        # 转换为字典列表
-        tags_list = []
-        for tag in tags:
-            tags_list.append({
-                'id': tag['id'],
-                'name': tag['name'],
-                'emoji': tag['emoji'],
-                'color': tag['color'],
-                'usage_count': tag['usage_count'],
-                'tweet_count': tag['tweet_count'],
-                'is_auto_generated': bool(tag['is_auto_generated'])
-            })
-
-        return jsonify({
-            'success': True,
-            'tags': tags_list,
-            'total': len(tags_list)
-        })
-
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-
-@app.route('/api/tags/generate/<int:task_id>', methods=['POST'])
-@login_required
-def api_generate_tags(task_id):
-    """为指定推文生成标签"""
-    try:
-        # 获取推文内容
-        conn = get_db_connection()
-        task = conn.execute('SELECT tweet_text, author_username FROM tasks WHERE id = ?', (task_id,)).fetchone()
-        conn.close()
-
-        if not task:
-            return jsonify({'success': False, 'error': '推文不存在'}), 404
-
-        tweet_text = task['tweet_text']
-        author_username = task['author_username']
-
-        # 获取请求参数
-        data = request.get_json() or {}
-        method = data.get('method', 'rule_based')  # 'rule_based', 'gemini_api', or 'claude_api'
-        api_key = data.get('api_key', None)
-
-        # 如果没有提供API密钥，尝试从config.ini获取
-        if not api_key and method == 'gemini_api':
-            from services.config_manager import ConfigManager
-            config = ConfigManager()
-            api_key = config.get_gemini_api_key()
-
-        # 生成标签
-        if method == 'gemini_api' and api_key:
-            tags = tag_generator.generate_tags_gemini_api(tweet_text, api_key)
-        elif method == 'claude_api' and api_key:
-            tags = tag_generator.generate_tags_claude_api(tweet_text, api_key)
-        else:
-            tags = tag_generator.generate_tags_rule_based(tweet_text, author_username)
-
-        if not tags:
-            return jsonify({
-                'success': True,
-                'message': '未匹配到合适的标签',
-                'tags': []
-            })
-
-        # 应用标签
-        tag_generator.apply_tags_to_tweet(task_id, tags, method)
-
-        # 返回生成的标签
-        applied_tags = tag_generator.get_tags_for_tweet(task_id)
-
-        return jsonify({
-            'success': True,
-            'message': f'成功生成 {len(applied_tags)} 个标签',
-            'tags': applied_tags
-        })
-
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-
-@app.route('/api/tags/tweet/<int:task_id>')
-def api_get_tweet_tags(task_id):
-    """获取推文的所有标签"""
-    try:
-        tags = tag_generator.get_tags_for_tweet(task_id)
-        return jsonify({
-            'success': True,
-            'tags': tags
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-
-@app.route('/api/tags/add', methods=['POST'])
-@login_required
-def api_add_tag_to_tweet():
-    """手动添加标签到推文"""
-    try:
-        data = request.get_json()
-        task_id = data.get('task_id')
-        tag_name = data.get('tag_name')
-
-        if not task_id or not tag_name:
-            return jsonify({'success': False, 'error': '缺少参数'}), 400
-
-        # 添加标签
-        tag_generator.apply_tags_to_tweet(task_id, [(tag_name, 1.0)], 'manual')
-
-        return jsonify({
-            'success': True,
-            'message': f'标签 "{tag_name}" 已添加'
-        })
-
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-
-@app.route('/api/tags/remove', methods=['POST'])
-@login_required
-def api_remove_tag_from_tweet():
-    """从推文移除标签"""
-    try:
-        data = request.get_json()
-        task_id = data.get('task_id')
-        tag_id = data.get('tag_id')
-
-        if not task_id or not tag_id:
-            return jsonify({'success': False, 'error': '缺少参数'}), 400
-
-        tag_generator.remove_tag_from_tweet(task_id, tag_id)
-
-        return jsonify({
-            'success': True,
-            'message': '标签已移除'
-        })
-
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-
-@app.route('/api/saved/by-tag')
-def api_saved_by_tag():
-    """按标签筛选已保存推文"""
-    tag_name = request.args.get('tag', '').strip()
-    page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 20, type=int)
-
-    if not tag_name:
-        return jsonify({'success': False, 'error': '未指定标签'}), 400
-
-    conn = get_db_connection()
-
-    # 先查找标签ID
-    tag_result = conn.execute('SELECT id FROM tags WHERE name = ?', (tag_name,)).fetchone()
-    if not tag_result:
-        conn.close()
-        return jsonify({
-            'saved': [],
-            'total': 0,
-            'page': page,
-            'per_page': per_page,
-            'pages': 0
-        })
-
-    tag_id = tag_result['id']
-    offset = (page - 1) * per_page
-
-    # 查询包含指定标签的推文
-    query = '''
-        SELECT DISTINCT t.* FROM tasks t
-        JOIN tweet_tags tt ON t.id = tt.task_id
-        WHERE tt.tag_id = ?
-        AND t.status = 'completed'
-        ORDER BY t.processed_at DESC
-        LIMIT ? OFFSET ?
-    '''
-
-    tasks = conn.execute(query, [tag_id, per_page, offset]).fetchall()
-
-    # 获取总数
-    count_query = '''
-        SELECT COUNT(DISTINCT t.id) as count FROM tasks t
-        JOIN tweet_tags tt ON t.id = tt.task_id
-        WHERE tt.tag_id = ?
-        AND t.status = 'completed'
-    '''
-    total = conn.execute(count_query, [tag_id]).fetchone()['count']
-
-    # 转换为字典列表（复用 api_saved 的处理逻辑）
-    saved_list = []
-    for task in tasks:
-        task_dict = dict(task)
-        if task_dict['processed_at']:
-            processed_time = parse_time_from_db(task_dict['processed_at'])
-            task_dict['processed_at'] = processed_time.strftime('%Y-%m-%d %H:%M:%S') if processed_time else task_dict['processed_at']
-
-        # 检查头像文件是否存在
-        if task_dict['save_path']:
-            raw_path = task_dict['save_path']
-            normalized_save_path = normalize_path_cross_platform(raw_path)
-            actual_save_path = find_actual_tweet_directory(normalized_save_path)
-            avatar_path = os.path.join(actual_save_path, 'avatar.jpg')
-
-            if os.path.exists(avatar_path):
-                task_dict['has_avatar'] = True
-                task_dict['avatar_url'] = f'/media/{task_dict["id"]}/avatar.jpg'
-            else:
-                task_dict['has_avatar'] = False
-                task_dict['avatar_url'] = None
-
-            # 检查是否有实际的媒体文件用于预览
-            has_media_preview = False
-            thumbnails_dir = os.path.join(actual_save_path, 'thumbnails')
-            if os.path.exists(thumbnails_dir):
-                for filename in os.listdir(thumbnails_dir):
-                    if filename.lower().endswith(('.jpg', '.jpeg', '.png')):
-                        has_media_preview = True
-                        break
-
-            if not has_media_preview:
-                images_dir = os.path.join(actual_save_path, 'images')
-                if os.path.exists(images_dir):
-                    for filename in os.listdir(images_dir):
-                        if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
-                            has_media_preview = True
-                            break
-
-            if not has_media_preview:
-                videos_dir = os.path.join(actual_save_path, 'videos')
-                if os.path.exists(videos_dir):
-                    for filename in os.listdir(videos_dir):
-                        if filename.lower().endswith(('.mp4', '.mov', '.avi', '.webm')):
-                            has_media_preview = True
-                            break
-
-            task_dict['has_media_preview'] = has_media_preview
-
-            # 读取推文内容用于预览
-            content_path = os.path.join(actual_save_path, 'content.txt')
-            if os.path.exists(content_path):
-                try:
-                    with open(content_path, 'r', encoding='utf-8') as f:
-                        tweet_content = f.read().strip()
-                        if len(tweet_content) > 140:
-                            task_dict['preview_text'] = tweet_content[:140] + '...'
-                        else:
-                            task_dict['preview_text'] = tweet_content
-                except Exception as e:
-                    task_dict['preview_text'] = f'内容读取失败: {str(e)}'
-            else:
-                task_dict['preview_text'] = f'内容文件不存在: {content_path}'
-        else:
-            task_dict['has_avatar'] = False
-            task_dict['avatar_url'] = None
-            task_dict['has_media_preview'] = False
-            task_dict['preview_text'] = '保存路径不存在'
-
-        # 获取标签信息
-        task_dict['tags'] = tag_generator.get_tags_for_tweet(task_dict['id'])
-
-        saved_list.append(task_dict)
-
-    conn.close()
-
-    return jsonify({
-        'saved': saved_list,
-        'total': total,
-        'page': page,
-        'per_page': per_page,
-        'pages': (total + per_page - 1) // per_page
     })
 
 

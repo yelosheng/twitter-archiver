@@ -29,21 +29,6 @@
     </div>
 </div>
 
-<!-- 标签筛选状态栏 -->
-<div id="tag-filter-bar" class="tag-filter-bar hidden">
-    <div class="d-flex align-items-center justify-content-between">
-        <div>
-            <i class="bi bi-funnel-fill me-2"></i>
-            <span class="me-2">按标签筛选:</span>
-            <span class="tag-filter-badge">
-                <span id="current-tag-name"></span>
-                <span class="remove-filter" onclick="clearTagFilter()">×</span>
-            </span>
-        </div>
-        <small class="text-muted" id="tag-filter-results"></small>
-    </div>
-</div>
-
 <div class="card">
     <div class="card-body">
         <div id="loading" class="text-center py-4">
@@ -293,52 +278,6 @@
         color: #6c757d;
     }
 
-    /* 标签样式 */
-    .tag-badge {
-        font-size: 12px;
-        font-weight: 500;
-        padding: 4px 10px;
-        margin-right: 4px;
-        margin-bottom: 4px;
-        border-radius: 12px;
-        display: inline-block;
-        transition: all 0.2s ease;
-    }
-
-    .tag-badge:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    }
-
-    /* 标签筛选状态栏 */
-    .tag-filter-bar {
-        background: #e7f3ff;
-        border: 1px solid #b3d9ff;
-        border-radius: 8px;
-        padding: 12px 16px;
-        margin-bottom: 16px;
-    }
-
-    .tag-filter-badge {
-        background: #0d6efd;
-        color: white;
-        padding: 6px 12px;
-        border-radius: 16px;
-        font-size: 14px;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .tag-filter-badge .remove-filter {
-        cursor: pointer;
-        font-weight: bold;
-        opacity: 0.8;
-    }
-
-    .tag-filter-badge .remove-filter:hover {
-        opacity: 1;
-    }
 </style>
 {% endblock %}
 
@@ -347,7 +286,6 @@
     let currentPage = 1;
     const perPage = 12;
     let currentSearchQuery = '';
-    let currentTagFilter = '';  // 当前标签筛选
     let isLoading = false;
     let hasMoreData = true;
     let isInitialLoad = true;
@@ -496,131 +434,6 @@
         loadSaved(1, '', false);
     }
 
-    // 按标签筛选
-    function filterByTag(tagName) {
-        currentTagFilter = tagName;
-        currentPage = 1;
-        hasMoreData = true;
-        currentSearchQuery = '';  // 清除搜索
-        document.getElementById('search-input').value = '';
-
-        // 显示标签筛选状态栏
-        document.getElementById('current-tag-name').textContent = tagName;
-        showElement(document.getElementById('tag-filter-bar'));
-        hideElement(document.getElementById('search-status'));
-        hideElement(document.getElementById('no-more-data'));
-
-        // 加载数据
-        loadSavedByTag(tagName, 1, false);
-    }
-
-    // 清除标签筛选
-    function clearTagFilter() {
-        currentTagFilter = '';
-        currentPage = 1;
-        hasMoreData = true;
-        hideElement(document.getElementById('tag-filter-bar'));
-        hideElement(document.getElementById('no-more-data'));
-        loadSaved(1, '', false);
-    }
-
-    // 按标签加载推文
-    function loadSavedByTag(tagName, page = 1, append = false) {
-        // 防止重复加载
-        if (isLoading) return;
-
-        const loading = document.getElementById('loading');
-        const container = document.getElementById('saved-container');
-        const noSaved = document.getElementById('no-saved');
-        const lazyLoading = document.getElementById('lazy-loading');
-        const noMoreData = document.getElementById('no-more-data');
-
-        isLoading = true;
-
-        if (!append) {
-            // 首次加载时显示主加载器
-            showElement(loading);
-            hideElement(container);
-            hideElement(noSaved);
-            isInitialLoad = true;
-        } else {
-            // 懒加载时显示懒加载器
-            showElement(lazyLoading);
-            hideElement(noMoreData);
-        }
-
-        const params = new URLSearchParams({
-            tag: tagName,
-            page: page,
-            per_page: perPage
-        });
-
-        fetch(`/api/saved/by-tag?${params}`)
-            .then(response => response.json())
-            .then(data => {
-                isLoading = false;
-                hideElement(loading);
-                hideElement(lazyLoading);
-
-                if (data.saved.length === 0) {
-                    if (append) {
-                        // 懒加载时没有更多数据
-                        hasMoreData = false;
-                        showElement(noMoreData);
-                        return;
-                    }
-
-                    // 首次加载时没有数据
-                    noSaved.innerHTML = `
-                        <i class="bi bi-tag large-icon"></i>
-                        <p class="text-muted mt-2">未找到标签"${tagName}"的推文</p>
-                    `;
-                    showElement(noSaved);
-                    return;
-                }
-
-                showElement(container);
-
-                if (append) {
-                    // 懒加载：追加到现有内容
-                    appendSaved(data.saved);
-                } else {
-                    // 首次加载：替换内容
-                    renderSaved(data.saved);
-                }
-
-                currentPage = page;
-
-                // 检查是否还有更多数据
-                if (data.saved.length < perPage) {
-                    hasMoreData = false;
-                    if (!isInitialLoad) {
-                        showElement(noMoreData);
-                    }
-                } else {
-                    hasMoreData = true;
-                }
-
-                isInitialLoad = false;
-
-                // 更新标签筛选结果显示
-                if (!append) {
-                    document.getElementById('tag-filter-results').textContent = `找到 ${data.total} 条结果`;
-                }
-            })
-            .catch(error => {
-                console.error('Error loading tweets by tag:', error);
-                isLoading = false;
-                hideElement(loading);
-                hideElement(lazyLoading);
-
-                if (!append) {
-                    showNotification('加载推文失败', 'error');
-                } else {
-                    showNotification('加载更多推文失败', 'error');
-                }
-            });
-    }
 
     // 处理搜索框回车键
     function handleSearchKeyPress(event) {
@@ -695,16 +508,6 @@
                     ''
                 }
                         
-                        <!-- 标签显示 -->
-                        ${item.tags && item.tags.length > 0 ?
-                    `<div class="mb-3">
-                                ${item.tags.map(tag =>
-                        `<span class="badge bg-primary tag-badge" onclick="filterByTag('${tag.name}')" style="cursor: pointer;" title="点击筛选">${tag.name}</span>`
-                    ).join(' ')}
-                            </div>` :
-                    ''
-                }
-
                         <div class="mb-3">
                             <small class="text-muted">
                                 <i class="bi bi-calendar"></i> ${item.processed_at}
@@ -743,12 +546,7 @@
 
         const nextPage = currentPage + 1;
 
-        // 根据当前模式选择不同的加载函数
-        if (currentTagFilter) {
-            loadSavedByTag(currentTagFilter, nextPage, true);
-        } else {
-            loadSaved(nextPage, currentSearchQuery, true);
-        }
+        loadSaved(nextPage, currentSearchQuery, true);
     }
 
     // 检查是否需要加载更多数据
@@ -875,21 +673,7 @@
     // 当窗口大小改变时也检查一下滚动位置
     window.addEventListener('resize', throttledScrollCheck);
 
-    // 检查URL参数，如果有tag参数则自动筛选
-    function checkUrlParams() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const tagParam = urlParams.get('tag');
-
-        if (tagParam) {
-            // 自动按标签筛选
-            filterByTag(tagParam);
-        } else {
-            // 正常加载
-            loadSaved();
-        }
-    }
-
     // 初始加载
-    checkUrlParams();
+    loadSaved();
 </script>
 {% endblock %}
