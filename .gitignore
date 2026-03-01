@@ -201,3 +201,15 @@ credentials.json
 nul
 
 users.json
+
+# Runtime secrets
+secret_key.txt
+
+# Claude AI assistant local config
+.claude/
+
+# Debug HTML artifacts
+article_debug*.html
+
+# Empty/temporary databases
+tweets.db
