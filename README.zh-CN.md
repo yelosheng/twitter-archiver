@@ -18,7 +18,7 @@
 - 保存完整元数据（作者信息、发布时间等）为 JSON
 - 内置任务队列与失败重试机制（指数退避）
 - Web UI 支持实时日志流、任务监控和内容浏览
-- 已保存页面支持瀑布加载和分页两种浏览模式（可切换，偏好本地保存）
+- 已保存页面支持瀑布加载和分页两种浏览模式（可切换）
 - 每条归档内容可生成唯一分享链接
 - 支持在 Web UI 用户菜单直接修改密码
 - 可选：Telegram 机器人——向私人 Bot 发送链接即可触发保存
@@ -55,6 +55,52 @@ python run_web.py
 浏览器访问 `http://localhost:6201`，默认登录账号：`admin` / 密码：`admin`。
 
 > **首次登录后请立即修改密码：** 点击右上角用户菜单 → **修改密码**。
+
+---
+
+## 🖱️ 浏览器插件（油猴脚本）——桌面端首选
+
+桌面浏览器最便捷的保存方式。油猴脚本会在 Twitter/X 每条推文下方注入一个**保存按钮**，点击即可归档推文及所有媒体，无需离开页面或手动复制链接。
+
+![推文页面上的保存按钮](X_page_tweet.png)
+
+**安装步骤：**
+1. 安装 [Tampermonkey](https://www.tampermonkey.net/) 浏览器扩展（支持 Chrome、Firefox、Edge、Safari）
+2. 启动 Web 界面：`python run_web.py`
+3. 访问 `http://localhost:6201/help`，点击安装链接——Tampermonkey 会弹出确认对话框
+4. 点击**安装**——此后每条推文下方都会自动出现保存按钮
+
+**配置后端地址**（首次使用或服务器地址变更时需要设置）：
+- 点击浏览器工具栏中的 Tampermonkey 图标
+- 找到 **Twitter/X Archiver Save Button** 脚本，点击设置图标
+- 点击 **⚙️ 设置后端地址**，输入你的服务地址
+
+如果服务器与浏览器在同一台设备上，默认的 `http://localhost:6201` 即可使用。如果部署在家庭服务器或 NAS 上，填入设备的局域网地址，例如 `http://192.168.1.100:6201`。
+
+脚本文件位于 `tampermonkey/twitter-saver.user.js`。
+
+---
+
+## 🤖 Telegram 机器人——移动端首选
+
+手机或平板上最便捷的保存方式。通过 Twitter/X 原生分享功能，直接将推文分享给你的私人 Telegram 机器人，无需复制链接，无需切换 App。
+
+![Telegram 机器人保存推文](telegram_bot.png)
+
+**配置步骤：**
+1. 在 Telegram 中打开 [@BotFather](https://t.me/BotFather)，发送 `/newbot`，按提示操作，复制机器人 Token
+2. 在 Web 界面访问 `/telegram`，粘贴 Token，点击**保存并启动机器人**
+3. 在 Telegram 中打开你的机器人，发送 `/start`——第一个发送此命令的人成为永久所有者，只有所有者可以触发保存
+4. 完成设置——向机器人发送或转发任意 `twitter.com` / `x.com` 链接，机器人会立即回复任务 ID 并开始下载
+
+**移动端使用方法（主要场景）：**
+1. 在 Twitter/X App 中打开任意推文
+2. 点击**分享**图标 → **分享至...** → 从联系人列表中选择你的 Telegram 机器人
+3. 机器人收到链接后立即加入队列，并发送确认回复
+
+**机器人指令：**
+- 包含 Twitter/X 链接的消息 → 加入保存队列
+- `/status` — 显示当前队列大小
 
 ---
 
@@ -156,38 +202,6 @@ saved_tweets/
 2. **规则匹配** — 无需 API 密钥，基于内置关键词规则自动生成基础标签。
 
 通过 Web 界面的 `/tags` 页面可管理所有标签，也可在 `/saved` 页面对单条内容手动触发标签生成。
-
----
-
-## 🖱️ 浏览器脚本（油猴）
-
-安装油猴脚本后，可在 Twitter/X 每条推文下直接点击保存按钮一键归档，无需离开页面或手动复制链接。
-
-**安装步骤：**
-1. 安装 [Tampermonkey](https://www.tampermonkey.net/) 浏览器扩展
-2. 启动 Web 界面：`python run_web.py`
-3. 访问 `http://localhost:6201/help`，点击安装链接
-
-**配置后端地址：**
-点击 Tampermonkey 扩展图标 → 找到脚本 → 点击 **⚙️ 设置后端地址**，输入你的服务地址（默认为 `http://localhost:6201`）。
-
-脚本文件位于 `tampermonkey/twitter-saver.user.js`。
-
----
-
-## 🤖 Telegram 机器人（可选）
-
-向自己的私人 Telegram 机器人发送或转发推文链接，即可触发保存任务。
-
-**配置步骤：**
-1. 通过 [@BotFather](https://t.me/BotFather) 创建机器人，复制 Token
-2. 在 Web 界面访问 `/telegram`，粘贴 Token 并点击 **保存并启动机器人**
-3. 在 Telegram 中打开机器人，发送 `/start` — 你将成为永久所有者
-4. 发送或转发任意推文链接，机器人会将其加入队列并回复任务 ID
-
-**机器人指令：**
-- 包含 Twitter/X 链接的消息 → 加入保存队列
-- `/status` — 显示当前队列大小
 
 ---
 

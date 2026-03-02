@@ -58,6 +58,52 @@ Open `http://localhost:6201` in your browser. Default login: `admin` / `admin`.
 
 ---
 
+## 🖱️ Browser Extension (Tampermonkey) — Best for Desktop
+
+The most convenient way to save tweets on a desktop browser. A Tampermonkey userscript injects a **save button** directly below each tweet on Twitter/X — one click archives the tweet and all its media without leaving the page or copying any URL.
+
+![Save button on tweet page](X_page_tweet.png)
+
+**Install:**
+1. Install the [Tampermonkey](https://www.tampermonkey.net/) browser extension (Chrome, Firefox, Edge, or Safari)
+2. Start the web UI: `python run_web.py`
+3. Visit `http://localhost:6201/help` and click the install link — Tampermonkey will open a confirmation dialog
+4. Click **Install** — the save button now appears on every tweet automatically
+
+**Configure the backend URL** (required the first time, or when your server address changes):
+- Click the Tampermonkey icon in your browser toolbar
+- Find the **Twitter/X Archiver Save Button** script and click the settings icon
+- Click **⚙️ 设置后端地址**, then enter your server address
+
+If the server runs on the same machine as your browser, the default `http://localhost:6201` works out of the box. For a home server or NAS, use its local IP, e.g. `http://192.168.1.100:6201`.
+
+The script file is at `tampermonkey/twitter-saver.user.js`.
+
+---
+
+## 🤖 Telegram Bot — Best for Mobile
+
+The most convenient way to save tweets on a phone or tablet. Share any tweet directly to your private Telegram bot using the native Twitter/X share sheet — no URL copying, no app switching.
+
+![Telegram bot saving a tweet](telegram_bot.png)
+
+**Setup:**
+1. Open [@BotFather](https://t.me/BotFather) on Telegram, send `/newbot`, follow the prompts, and copy the bot token
+2. In the web UI, go to `/telegram`, paste the token, and click **Save & Start Bot**
+3. Open your new bot in Telegram and send `/start` — the first person to do this becomes the permanent owner; only the owner can trigger saves
+4. The bot is now ready — send or forward any `twitter.com` / `x.com` link to it and it will reply with a task ID and start saving immediately
+
+**On mobile (the main use case):**
+1. Open a tweet in the Twitter/X app
+2. Tap the **Share** icon → **Share via...** → select your Telegram bot from the contact list
+3. The bot receives the link and queues the download — you get a confirmation reply
+
+**Bot commands:**
+- Any message containing a Twitter/X URL → queued for archiving
+- `/status` — shows current queue size
+
+---
+
 ## ⚙️ Configuration
 
 Copy `config.ini.example` to `config.ini` and edit as needed.
@@ -155,38 +201,6 @@ Automatically generates semantic tags after each successful archive to aid categ
 2. **Rule-based** — no API key required; uses built-in keyword rules for basic tagging.
 
 Manage tags on the `/tags` page, or trigger generation for individual items on the `/saved` page.
-
----
-
-## 🖱️ Browser Extension (Tampermonkey)
-
-A Tampermonkey userscript adds a save button directly to each tweet on Twitter/X, letting you archive with one click without leaving the page.
-
-**Install:**
-1. Install the [Tampermonkey](https://www.tampermonkey.net/) browser extension
-2. Start the web UI (`python run_web.py`)
-3. Visit `http://localhost:6201/help` and click the install link
-
-**Configure backend URL:**
-Click the Tampermonkey icon → find the script → click **⚙️ 设置后端地址** to set your server address (default: `http://localhost:6201`).
-
-The script is located at `tampermonkey/twitter-saver.user.js`.
-
----
-
-## 🤖 Telegram Bot (Optional)
-
-Save tweets by sending or forwarding tweet links to your own private Telegram bot.
-
-**Setup:**
-1. Create a bot via [@BotFather](https://t.me/BotFather) and copy the token
-2. Visit `/telegram` in the web UI, paste the token, and click **Save & Start Bot**
-3. Open your bot in Telegram and send `/start` — you become the permanent owner
-4. Send or forward any tweet link — the bot queues it and replies with the task ID
-
-**Bot commands:**
-- Any message containing a Twitter/X URL → adds to queue
-- `/status` — shows current queue size
 
 ---
 
