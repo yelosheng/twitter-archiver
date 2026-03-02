@@ -207,6 +207,7 @@ secret_key.txt
 
 # Claude AI assistant local config
 .claude/
+CLAUDE.md
 
 # Debug HTML artifacts
 article_debug*.html
