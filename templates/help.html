@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}帮助 - Twitter内容保存工具{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <h2 class="mb-4"><i class="bi bi-question-circle"></i> 帮助</h2>
+
+        <!-- Tampermonkey 脚本安装 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-puzzle"></i> 油猴脚本安装（浏览器一键保存）</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">安装油猴脚本后，可在 Twitter/X 页面上直接点击保存按钮归档推文，无需手动复制链接。</p>
+
+                <ol class="mb-3">
+                    <li class="mb-2">
+                        安装 <a href="https://www.tampermonkey.net/" target="_blank" rel="noopener">Tampermonkey</a> 浏览器扩展
+                        <small class="text-muted d-block">支持 Chrome、Firefox、Edge、Safari 等主流浏览器</small>
+                    </li>
+                    <li class="mb-2">
+                        确保本服务正在运行，然后
+                        <a href="/tampermonkey/twitter-archiver.user.js" class="btn btn-sm btn-primary ms-1">
+                            <i class="bi bi-download"></i> 点击安装脚本
+                        </a>
+                        <small class="text-muted d-block mt-1">浏览器会弹出 Tampermonkey 安装确认页面</small>
+                    </li>
+                    <li class="mb-2">
+                        在 Tampermonkey 弹出的安装页面中点击 <strong>安装</strong> 按钮确认
+                    </li>
+                </ol>
+
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle"></i>
+                    脚本文件位于项目的 <code>tampermonkey/twitter-archiver.user.js</code>，也可手动复制到 Tampermonkey 新建脚本中安装。
+                </div>
+            </div>
+        </div>
+
+        <!-- 配置后端地址 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-gear"></i> 配置后端地址</h5>
+            </div>
+            <div class="card-body">
+                <p>脚本默认连接 <code>http://localhost:6201</code>。如果你的服务运行在其他地址，需要修改设置：</p>
+                <ol>
+                    <li class="mb-2">在浏览器工具栏点击 Tampermonkey 扩展图标</li>
+                    <li class="mb-2">找到 <strong>Twitter/X Archiver Save Button</strong> 脚本</li>
+                    <li class="mb-2">点击脚本菜单中的 <strong>⚙️ 设置后端地址</strong></li>
+                    <li class="mb-2">在弹出对话框中输入你的服务地址，例如：
+                        <ul class="mt-1">
+                            <li><code>http://localhost:6201</code>（本地运行）</li>
+                            <li><code>https://your-server.com</code>（远程服务器）</li>
+                        </ul>
+                    </li>
+                    <li>点击确定保存，刷新 Twitter/X 页面后生效</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- 使用方法 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-play-circle"></i> 使用方法</h5>
+            </div>
+            <div class="card-body">
+                <ol>
+                    <li class="mb-2">打开 <a href="https://twitter.com" target="_blank" rel="noopener">Twitter/X</a></li>
+                    <li class="mb-2">在任意推文的操作栏最右侧，会出现一个蓝色圆圈保存图标</li>
+                    <li class="mb-2">点击图标，脚本会自动将推文 URL 提交到本地归档服务</li>
+                    <li class="mb-2">右上角会弹出提示：
+                        <ul class="mt-1">
+                            <li><span class="badge bg-success">绿色</span> — 保存任务已提交成功</li>
+                            <li><span class="badge bg-warning text-dark">黄色</span> — 推文已存在，无需重复保存</li>
+                            <li><span class="badge bg-danger">红色</span> — 提交失败，请检查服务是否运行</li>
+                        </ul>
+                    </li>
+                    <li>在 <a href="{{ url_for('tasks') }}">任务队列</a> 中查看保存进度，完成后在 <a href="{{ url_for('saved') }}">已保存</a> 中浏览</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- FAQ -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-chat-square-question"></i> 常见问题</h5>
+            </div>
+            <div class="card-body">
+                <div class="accordion" id="faqAccordion">
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                保存图标没有出现在推文下方
+                            </button>
+                        </h2>
+                        <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                <ul>
+                                    <li>确认 Tampermonkey 扩展已启用，且脚本处于开启状态</li>
+                                    <li>刷新 Twitter/X 页面，等待 1-2 秒让脚本初始化</li>
+                                    <li>检查浏览器控制台（F12）是否有报错信息</li>
+                                    <li>尝试禁用其他 Twitter 相关脚本，排除冲突</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                图标显示为破损（加载失败）
+                            </button>
+                        </h2>
+                        <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                图标从本服务的 <code>/static/icon-128.png</code> 加载。请确认：
+                                <ul class="mt-1">
+                                    <li>服务正在运行（<a href="/">访问首页</a> 检查）</li>
+                                    <li>脚本中配置的后端地址与实际服务地址一致</li>
+                                    <li>若使用 HTTPS，确保证书有效</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                点击保存按钮显示"网络请求失败"
+                            </button>
+                        </h2>
+                        <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                <ul>
+                                    <li>确认本服务正在运行：<code>python run_web.py</code></li>
+                                    <li>通过 <strong>⚙️ 设置后端地址</strong> 检查并更新服务地址</li>
+                                    <li>如果使用远程服务器，确认防火墙允许对应端口访问</li>
+                                    <li>在 Tampermonkey 脚本中确认 <code>@connect *</code> 已授权</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                                如何更新脚本到新版本？
+                            </button>
+                        </h2>
+                        <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                重新访问 <a href="/tampermonkey/twitter-archiver.user.js">安装链接</a> 即可，Tampermonkey 会提示覆盖安装。
+                                或在 Tampermonkey 管理面板中手动替换脚本内容。
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

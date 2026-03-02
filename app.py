@@ -1315,6 +1315,21 @@ def debug():
     """调试页面"""
     return render_template('debug.html')
 
+@app.route('/help')
+@login_required
+def help_page():
+    """帮助页面"""
+    return render_template('help.html')
+
+@app.route('/tampermonkey/twitter-archiver.user.js')
+def serve_userscript():
+    """Serve the Tampermonkey userscript file directly."""
+    return send_from_directory(
+        os.path.join(os.path.dirname(__file__), 'tampermonkey'),
+        'twitter-archiver.user.js',
+        mimetype='application/javascript'
+    )
+
 @app.route('/reset_stuck_tasks')
 def reset_stuck_tasks():
     """重置卡住的任务"""
