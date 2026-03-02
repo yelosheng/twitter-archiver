@@ -2171,6 +2171,95 @@ def test_logs():
     })
 
 
+# ---------------------------------------------------------------------------
+# Telegram bot integration
+# ---------------------------------------------------------------------------
+
+def _telegram_submit(url: str) -> dict:
+    """Submit a URL from the Telegram bot. Thread-safe — opens its own DB connection."""
+    if not TwitterURLParser.is_valid_twitter_url(url):
+        return {'success': False, 'error': 'invalid_url'}
+
+    conn = get_db_connection()
+    existing = conn.execute(
+        'SELECT id, status FROM tasks WHERE url = ?', (url,)
+    ).fetchone()
+    if existing:
+        conn.close()
+        return {
+            'success': True,
+            'duplicate': True,
+            'task_id': existing['id'],
+            'status': existing['status'],
+        }
+
+    cursor = conn.cursor()
+    cursor.execute(
+        'INSERT INTO tasks (url, status, created_at) VALUES (?, ?, ?)',
+        (url, 'pending', format_time_for_db(get_current_time()))
+    )
+    task_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    processing_queue.put((task_id, url))
+    return {'success': True, 'duplicate': False, 'task_id': task_id}
+
+
+@app.route('/telegram')
+@login_required
+def telegram_page():
+    """Telegram bot configuration page."""
+    return render_template('telegram.html')
+
+
+@app.route('/api/telegram/status')
+@login_required
+def telegram_status():
+    """Return current bot status, owner info, and whether a token is configured."""
+    import configparser as cp
+    from services.telegram_bot import get_status
+    cfg = cp.ConfigParser()
+    if os.path.exists('config.ini'):
+        cfg.read('config.ini')
+    token_configured = bool(cfg.get('telegram', 'bot_token', fallback='').strip())
+    status = get_status()
+    status['token_configured'] = token_configured
+    return jsonify(status)
+
+
+@app.route('/api/telegram/config', methods=['POST'])
+@login_required
+def telegram_config():
+    """Save bot token to config.ini and (re)start the bot."""
+    import configparser as cp
+    from services.telegram_bot import start_bot
+    data = request.get_json() or {}
+    token = data.get('token', '').strip()
+    if not token:
+        return jsonify({'success': False, 'error': 'Token is required'}), 400
+
+    cfg = cp.ConfigParser()
+    if os.path.exists('config.ini'):
+        cfg.read('config.ini')
+    if 'telegram' not in cfg:
+        cfg['telegram'] = {}
+    cfg['telegram']['bot_token'] = token
+    with open('config.ini', 'w') as f:
+        cfg.write(f)
+
+    start_bot(token, _telegram_submit)
+    return jsonify({'success': True, 'message': 'Token saved and bot started'})
+
+
+@app.route('/api/telegram/reset-owner', methods=['POST'])
+@login_required
+def telegram_reset_owner():
+    """Clear the registered owner so the next /start registers a new one."""
+    from services.telegram_bot import clear_owner
+    clear_owner()
+    return jsonify({'success': True, 'message': 'Owner reset'})
+
+
 if __name__ == '__main__':
     # 初始化数据库
     init_db()
