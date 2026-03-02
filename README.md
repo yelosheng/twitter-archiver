@@ -66,7 +66,7 @@ Open `http://localhost:6201` in your browser. Default login: `admin` / `admin`.
 
 The most convenient way to save tweets on a desktop browser. A Tampermonkey userscript injects a **save button** directly below each tweet on Twitter/X — one click archives the tweet and all its media without leaving the page or copying any URL.
 
-![Save button on tweet page](X_page_tweet.png)
+<img src="X_page_tweet.png" alt="Save button on tweet page" width="75%">
 
 **Install:**
 1. Install the [Tampermonkey](https://www.tampermonkey.net/) browser extension (Chrome, Firefox, Edge, or Safari)

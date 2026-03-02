@@ -66,7 +66,7 @@ python run_web.py
 
 桌面浏览器最便捷的保存方式。油猴脚本会在 Twitter/X 每条推文下方注入一个**保存按钮**，点击即可归档推文及所有媒体，无需离开页面或手动复制链接。
 
-![推文页面上的保存按钮](X_page_tweet.png)
+<img src="X_page_tweet.png" alt="推文页面上的保存按钮" width="75%">
 
 **安装步骤：**
 1. 安装 [Tampermonkey](https://www.tampermonkey.net/) 浏览器扩展（支持 Chrome、Firefox、Edge、Safari）
