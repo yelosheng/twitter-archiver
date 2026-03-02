@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Twitter/X Saver Save Button
 // @namespace    https://github.com/yelosheng/twitter-saver
-// @version      2.2
+// @version      2.3
 // @description  在 Twitter/X 推文下添加保存按钮，一键归档到本地服务
 // @author       yelosheng
 // @match        https://twitter.com/*
@@ -224,20 +224,12 @@
     function addSaveButtonToTweet(tweetElement) {
         if (tweetElement.querySelector('.save-button')) return;
 
-        let actionBar = tweetElement.querySelector('div[role="group"]');
-
-        if (!actionBar) {
-            actionBar = tweetElement.querySelector('div:has(> div:nth-child(3))');
-            if (!actionBar) {
-                const buttonContainers = tweetElement.querySelectorAll('div');
-                for (let container of buttonContainers) {
-                    if (container.children.length >= 4) {
-                        actionBar = container;
-                        break;
-                    }
-                }
-            }
-        }
+        // Prefer the group that contains the Like button — avoids grabbing the
+        // wrong div[role="group"] on the detail page (e.g. the stats/metrics row).
+        let actionBar =
+            tweetElement.querySelector('div[role="group"]:has(button[data-testid="like"])') ||
+            tweetElement.querySelector('div[role="group"]:has(button[aria-label*="Like"])') ||
+            tweetElement.querySelector('div[role="group"]');
 
         if (actionBar) {
             const saveButton = createSaveButton(tweetElement);
