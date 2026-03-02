@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="telegram_avatar.png" alt="Twitter Saver" width="120">
+</div>
+
 # Twitter/X 内容归档工具
 
 专为 NAS、家庭服务器或树莓派设计的自托管推文保存工具。通过浏览器自动化一键将推文和媒体文件存档到本地——无需 Twitter API 密钥。
