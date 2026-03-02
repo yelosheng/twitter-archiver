@@ -69,13 +69,29 @@
             </div>
 
             <!-- Pagination controls -->
-            <div id="pagination-controls" class="d-flex justify-content-between align-items-center mt-3 hidden">
-                <button class="btn btn-outline-secondary btn-sm" id="btn-prev" onclick="goToPrevPage()">
-                    <i class="bi bi-chevron-left"></i> Prev
+            <div id="pagination-controls" class="d-flex justify-content-center align-items-center mt-3 gap-1 hidden flex-wrap">
+                <button class="btn btn-outline-secondary btn-sm" id="btn-first" onclick="goToPage(1)" title="First page">
+                    <i class="bi bi-chevron-double-left"></i>
                 </button>
-                <span id="page-info" class="text-muted small">Page 1</span>
-                <button class="btn btn-outline-secondary btn-sm" id="btn-next" onclick="goToNextPage()">
-                    Next <i class="bi bi-chevron-right"></i>
+                <button class="btn btn-outline-secondary btn-sm" id="btn-prev10" onclick="goToPage(currentPage - 10)" title="Back 10 pages">
+                    <i class="bi bi-chevron-left"></i>10
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" id="btn-prev" onclick="goToPage(currentPage - 1)" title="Previous page">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <div class="d-flex align-items-center gap-1">
+                    <input type="number" id="page-input" class="form-control form-control-sm text-center" style="width:62px;"
+                           min="1" onkeydown="if(event.key==='Enter') goToInputPage()">
+                    <span class="text-muted small">/ <span id="page-total">1</span></span>
+                </div>
+                <button class="btn btn-outline-secondary btn-sm" id="btn-next" onclick="goToPage(currentPage + 1)" title="Next page">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" id="btn-next10" onclick="goToPage(currentPage + 10)" title="Forward 10 pages">
+                    10<i class="bi bi-chevron-right"></i>
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" id="btn-last" onclick="goToPage(totalPages)" title="Last page">
+                    <i class="bi bi-chevron-double-right"></i>
                 </button>
             </div>
         </div>
@@ -359,25 +375,29 @@
 
     function updatePaginationControls() {
         if (viewMode !== 'paginated') return;
-        document.getElementById('btn-prev').disabled = currentPage <= 1;
-        document.getElementById('btn-next').disabled = currentPage >= totalPages;
-        document.getElementById('page-info').textContent = totalPages > 0
-            ? `Page ${currentPage} / ${totalPages}`
-            : 'No results';
+        const has = totalPages > 0;
+        const atFirst = !has || currentPage <= 1;
+        const atLast  = !has || currentPage >= totalPages;
+        document.getElementById('btn-first').disabled  = atFirst;
+        document.getElementById('btn-prev10').disabled = atFirst;
+        document.getElementById('btn-prev').disabled   = atFirst;
+        document.getElementById('btn-next').disabled   = atLast;
+        document.getElementById('btn-next10').disabled = atLast;
+        document.getElementById('btn-last').disabled   = atLast;
+        document.getElementById('page-input').value    = has ? currentPage : '';
+        document.getElementById('page-total').textContent = has ? totalPages : '0';
     }
 
-    function goToPrevPage() {
-        if (currentPage > 1) {
-            loadSaved(currentPage - 1, currentSearchQuery, false);
-            window.scrollTo(0, 0);
-        }
+    function goToPage(page) {
+        page = Math.max(1, Math.min(totalPages, Math.round(page)));
+        if (page === currentPage) return;
+        loadSaved(page, currentSearchQuery, false);
+        window.scrollTo(0, 0);
     }
 
-    function goToNextPage() {
-        if (currentPage < totalPages) {
-            loadSaved(currentPage + 1, currentSearchQuery, false);
-            window.scrollTo(0, 0);
-        }
+    function goToInputPage() {
+        const val = parseInt(document.getElementById('page-input').value, 10);
+        if (!isNaN(val)) goToPage(val);
     }
 
     function reloadSaved() {
