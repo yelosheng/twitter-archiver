@@ -20,7 +20,7 @@ from telegram.ext import (
 
 logger = logging.getLogger(__name__)
 
-OWNER_FILE = 'telegram_owner.json'
+OWNER_FILE = os.path.join(os.environ.get('DATA_DIR', os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'telegram_owner.json')
 
 # ---------------------------------------------------------------------------
 # Global state

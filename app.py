@@ -28,9 +28,12 @@ from utils.url_parser import TwitterURLParser
 
 app = Flask(__name__)
 
+# Data directory — override with DATA_DIR env var (used by Docker)
+DATA_DIR = os.environ.get('DATA_DIR', os.path.dirname(os.path.abspath(__file__)))
+
 # 使用固定的 secret key 或从环境变量读取
 # 这样重启应用后 session 不会失效
-SECRET_KEY_FILE = 'secret_key.txt'
+SECRET_KEY_FILE = os.path.join(DATA_DIR, 'secret_key.txt')
 if os.path.exists(SECRET_KEY_FILE):
     with open(SECRET_KEY_FILE, 'r') as f:
         app.secret_key = f.read().strip()
@@ -137,7 +140,7 @@ config_manager = None
 twitter_service = None
 media_downloader = None
 file_manager = None
-user_manager = UserManager()  # Initialize UserManager
+user_manager = UserManager(os.path.join(DATA_DIR, 'users.json'))  # Initialize UserManager
 processing_queue = queue.Queue()
 is_processing = False
 processing_thread = None
@@ -392,7 +395,7 @@ def check_and_queue_pending_tasks():
 # 数据库初始化
 def init_db():
     """初始化数据库"""
-    conn = sqlite3.connect('twitter_saver.db')
+    conn = sqlite3.connect(os.path.join(DATA_DIR, 'twitter_saver.db'))
     cursor = conn.cursor()
     
     # 创建任务表
@@ -449,7 +452,7 @@ def init_db():
 
 def get_db_connection():
     """获取数据库连接"""
-    conn = sqlite3.connect('twitter_saver.db')
+    conn = sqlite3.connect(os.path.join(DATA_DIR, 'twitter_saver.db'))
     conn.row_factory = sqlite3.Row
     return conn
 

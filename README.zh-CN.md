@@ -60,6 +60,22 @@ python run_web.py
 
 > **首次登录后请立即修改密码：** 点击右上角用户菜单 → **修改密码**。
 
+### Docker 部署（可选）
+
+```bash
+# 1. 复制配置文件
+cp config.ini.example config.ini
+
+# 2. 构建并启动
+docker compose up -d
+
+# 3. 访问 http://localhost:6201
+```
+
+所有数据（数据库、已保存推文、用户信息）均存储在宿主机的 `./docker-data/` 目录中，容器重启或重建后数据不会丢失。
+
+> **注意：** 首次构建需要几分钟——Playwright 在构建过程中会下载 Chromium（约 200 MB）。
+
 ---
 
 ## 🖱️ 浏览器插件（油猴脚本）——桌面端首选

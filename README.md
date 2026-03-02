@@ -60,6 +60,22 @@ Open `http://localhost:6201` in your browser. Default login: `admin` / `admin`.
 
 > **Change the default password immediately after first login:** click the user menu (top-right) → **Change Password**.
 
+### Docker (Alternative)
+
+```bash
+# 1. Copy config
+cp config.ini.example config.ini
+
+# 2. Build and start
+docker compose up -d
+
+# 3. Open http://localhost:6201
+```
+
+All data (database, saved tweets, user credentials) is stored in `./docker-data/` on your host machine and persists across container restarts and rebuilds.
+
+> **Note:** The first build takes a few minutes — Playwright downloads Chromium (~200 MB) during the build.
+
 ---
 
 ## 🖱️ Browser Extension (Tampermonkey) — Best for Desktop
