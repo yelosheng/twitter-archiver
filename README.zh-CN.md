@@ -63,13 +63,17 @@ python run_web.py
 ### Docker 部署（可选）
 
 ```bash
-# 1. 复制配置文件
+# 1. 克隆仓库
+git clone https://github.com/yelosheng/twitter-saver.git
+cd twitter-saver
+
+# 2. 复制配置文件
 cp config.ini.example config.ini
 
-# 2. 构建并启动
+# 3. 构建并启动
 docker compose up -d
 
-# 3. 访问 http://localhost:6201
+# 4. 访问 http://localhost:6201
 ```
 
 所有数据（数据库、已保存推文、用户信息）均存储在宿主机的 `./docker-data/` 目录中，容器重启或重建后数据不会丢失。
