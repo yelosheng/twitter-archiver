@@ -151,13 +151,27 @@ def _make_handlers(submit_callback: Callable):
 # Bot runner
 # ---------------------------------------------------------------------------
 
+_AVATAR_PATH = os.path.join(os.path.dirname(__file__), '..', 'telegram_avatar.png')
+
+
+async def _post_init(application: Application) -> None:
+    avatar = os.path.normpath(_AVATAR_PATH)
+    if os.path.exists(avatar):
+        try:
+            with open(avatar, 'rb') as f:
+                await application.bot.set_my_photo(photo=f)
+            logger.info("Telegram bot avatar set")
+        except Exception as e:
+            logger.warning(f"Could not set bot avatar: {e}")
+
+
 def _run_in_thread(token: str, submit_callback: Callable) -> None:
     global _bot_running, _bot_error
     _bot_running = True
     _bot_error = None
     try:
         start_h, status_h, message_h = _make_handlers(submit_callback)
-        application = Application.builder().token(token).build()
+        application = Application.builder().token(token).post_init(_post_init).build()
         application.add_handler(CommandHandler('start', start_h))
         application.add_handler(CommandHandler('status', status_h))
         application.add_handler(
