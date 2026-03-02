@@ -831,6 +831,30 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
+@app.route('/change-password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    """Change password page"""
+    if request.method == 'POST':
+        current_password = request.form.get('current_password', '')
+        new_password = request.form.get('new_password', '')
+        confirm_password = request.form.get('confirm_password', '')
+
+        if not current_password or not new_password or not confirm_password:
+            return render_template('change_password.html', error='All fields are required')
+
+        if new_password != confirm_password:
+            return render_template('change_password.html', error='New passwords do not match')
+
+        username = session.get('username')
+        if user_manager.change_password(username, current_password, new_password):
+            session.clear()
+            return redirect(url_for('login'))
+        else:
+            return render_template('change_password.html', error='Current password is incorrect')
+
+    return render_template('change_password.html')
+
 @app.route('/')
 @login_required
 def index():
