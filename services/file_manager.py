@@ -300,35 +300,6 @@ class FileManager:
 
                         f.write(html_template.format(reader_content=formatted_content))
             
-            # Save detailed information to details.txt
-            details_file = os.path.join(save_dir, "details.txt")
-            with open(details_file, 'w', encoding='utf-8') as f:
-                # Write tweet header information
-                f.write("=" * 80 + "\n")
-                f.write(f"Tweet ID: {tweet.id}\n")
-                f.write(f"Author: {tweet.author_name} (@{tweet.author_username})\n")
-                f.write(f"Published: {tweet.created_at.strftime('%Y-%m-%d %H:%M:%S')}\n")
-                f.write(f"Tweet Link: https://twitter.com/{tweet.author_username}/status/{tweet.id}\n")
-                f.write("=" * 80 + "\n\n")
-                
-                # Write tweet content
-                f.write("Tweet Content:\n")
-                f.write("-" * 40 + "\n")
-                f.write(tweet.text + "\n")
-                f.write("-" * 40 + "\n\n")
-                
-                # Write media file information
-                if media_files:
-                    f.write("Media Files:\n")
-                    f.write("-" * 40 + "\n")
-                    for media_file in media_files:
-                        f.write(f"Type: {media_file.media_type}\n")
-                        f.write(f"Filename: {media_file.filename}\n")
-                        f.write(f"Local Path: {media_file.local_path}\n")
-                        f.write(f"Original URL: {media_file.url}\n")
-                        f.write("\n")
-                    f.write("-" * 40 + "\n")
-                
         except IOError as e:
             raise FileManagerError(f"Failed to save tweet content: {e}")
     
@@ -494,51 +465,6 @@ class FileManager:
                     
                     f.write("\n</body>\n</html>")
             
-            # Save detailed information to details.txt
-            details_file = os.path.join(save_dir, "details.txt")
-            with open(details_file, 'w', encoding='utf-8') as f:
-                # Write thread header information
-                first_tweet = tweets[0]
-                f.write("=" * 80 + "\n")
-                f.write(f"Tweet Thread ({len(tweets)} tweets total)\n")
-                f.write(f"Author: {first_tweet.author_name} (@{first_tweet.author_username})\n")
-                f.write(f"Start Time: {first_tweet.created_at.strftime('%Y-%m-%d %H:%M:%S')}\n")
-                f.write(f"Conversation ID: {first_tweet.conversation_id}\n")
-                f.write("=" * 80 + "\n\n")
-                
-                # Write each tweet
-                for i, tweet in enumerate(tweets, 1):
-                    f.write(f"Tweet {i}/{len(tweets)}\n")
-                    f.write("-" * 60 + "\n")
-                    f.write(f"Tweet ID: {tweet.id}\n")
-                    f.write(f"Published: {tweet.created_at.strftime('%Y-%m-%d %H:%M:%S')}\n")
-                    f.write(f"Tweet Link: https://twitter.com/{tweet.author_username}/status/{tweet.id}\n")
-                    f.write("\n")
-                    f.write("Content:\n")
-                    f.write(tweet.text + "\n")
-                    
-                    # If this tweet has media files, list related media
-                    if media_files:
-                        tweet_media = [mf for mf in media_files if tweet.id in mf.local_path]
-                        if tweet_media:
-                            f.write("\nMedia Files:\n")
-                            for media_file in tweet_media:
-                                f.write(f"  - {media_file.filename} ({media_file.media_type})\n")
-                    
-                    f.write("\n" + "-" * 60 + "\n\n")
-                
-                # Write all media files summary
-                if media_files:
-                    f.write("All Media Files Summary:\n")
-                    f.write("=" * 60 + "\n")
-                    for media_file in media_files:
-                        f.write(f"Type: {media_file.media_type}\n")
-                        f.write(f"Filename: {media_file.filename}\n")
-                        f.write(f"Local Path: {media_file.local_path}\n")
-                        f.write(f"Original URL: {media_file.url}\n")
-                        f.write("\n")
-                    f.write("=" * 60 + "\n")
-                
         except IOError as e:
             raise FileManagerError(f"Failed to save thread content: {e}")
     
@@ -627,10 +553,6 @@ class FileManager:
         
         if os.path.exists(content_file):
             summary["files_created"].append("content.txt")
-        
-        details_file = os.path.join(save_dir, "details.txt")
-        if os.path.exists(details_file):
-            summary["files_created"].append("details.txt")
         
         if os.path.exists(metadata_file):
             summary["files_created"].append("metadata.json")
