@@ -92,19 +92,31 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Enlarge image on click
-        const images = document.querySelectorAll('.media-image');
-        images.forEach(img => {
-            img.addEventListener('click', function () {
-                const overlay = document.createElement('div');
-                overlay.className = 'image-overlay';
-                overlay.innerHTML = `
+        function openOverlay(src) {
+            const overlay = document.createElement('div');
+            overlay.className = 'image-overlay';
+            overlay.innerHTML = `
                 <div class="overlay-content">
-                    <img src="${this.src}" class="overlay-image">
+                    <img src="${src}" class="overlay-image">
                     <button class="close-btn" onclick="this.parentElement.parentElement.remove()">×</button>
                 </div>
             `;
-                document.body.appendChild(overlay);
+            document.body.appendChild(overlay);
+        }
+
+        // Enlarge image on click — media section images
+        document.querySelectorAll('.media-image').forEach(img => {
+            img.addEventListener('click', function () {
+                openOverlay(this.src);
+            });
+        });
+
+        // Enlarge image on click — images embedded in article HTML content
+        document.querySelectorAll('.html-content img').forEach(img => {
+            img.style.cursor = 'pointer';
+            img.addEventListener('click', function (e) {
+                e.preventDefault(); // 阻止父级 <a> 链接跳转
+                openOverlay(this.src);
             });
         });
     });

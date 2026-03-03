@@ -159,6 +159,11 @@ class FileManager:
                         
                         soup = BeautifulSoup(tweet.html_content, 'html.parser')
                         
+                        # 解除包裹图片的 <a> 链接，避免点击图片时跳转到外部链接
+                        for a in soup.find_all('a'):
+                            if a.find('img') and not a.get_text(strip=True):
+                                a.unwrap()
+
                         # 清理 Emoji 图片为其原始字符
                         for img in soup.find_all('img'):
                             if 'emoji' in img.get('src', '') or 'emoji' in img.get('alt', '').lower():
